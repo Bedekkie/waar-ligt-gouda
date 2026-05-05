@@ -379,6 +379,14 @@ function launchConfetti() {
 function checkGuess(){
   startLoadbar();
 
+  // ⭐ Zorg dat we ALTIJD een geldige correctAngle hebben
+  if (fixedCorrectAngle === null) {
+    const lat = userLat ?? 52.37;
+    const lng = userLng ?? 4.89;
+    const b = bearing(lat, lng, GOUDA.lat, GOUDA.lng);
+    fixedCorrectAngle = b - 270;
+  }
+
   const correctAngle = fixedCorrectAngle;
 
   const diff = Math.abs((currentAngle - correctAngle + 540) % 360 - 180);
