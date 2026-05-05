@@ -80,7 +80,6 @@
       transform-origin: 66% 24%;
     }
 
-    /* INFOBOX */
     #infobox {
       position: absolute;
       bottom: 160px;
@@ -103,10 +102,10 @@
       margin-top: 3px;
     }
 
-    /* LAADBALK — nu gegarandeerd zichtbaar */
+    /* LAADBALK */
     #progress-container {
       position: absolute;
-      bottom: 115px;   /* tussen infobox en startknop */
+      bottom: 115px;
       left: 16px; right: 16px;
       height: 10px;
       background: rgba(255,255,255,0.15);
@@ -129,7 +128,6 @@
       opacity: 1;
     }
 
-    /* STARTKNOP */
     #startbtn {
       position: absolute;
       bottom: 20px;
@@ -172,7 +170,6 @@
       <div id="dist"></div>
     </div>
 
-    <!-- LAADBALK -->
     <div id="progress-container">
       <div id="progress-bar"></div>
     </div>
@@ -197,6 +194,9 @@ let fallbackAngle = 0;
 let fallbackInterval = null;
 let progress = 0;
 let progressInterval = null;
+
+let lastHeading = null;
+let headingStableCount = 0;
 
 function toRad(d) { return d * Math.PI / 180; }
 
@@ -255,17 +255,40 @@ function startProgressBar() {
   progressInterval = setInterval(() => {
     if (realCompassActive) return;
 
-    progress += 2;
+    progress += 1;
     if (progress > 100) progress = 100;
 
     bar.style.width = progress + "%";
 
-  }, 40);
+  }, 80);
 }
 
 function stopProgressBar() {
   clearInterval(progressInterval);
   document.getElementById('progress-container').classList.remove('active');
+}
+
+function handleHeading(newHeading) {
+  if (newHeading == null || isNaN(newHeading)) return;
+
+  if (lastHeading === null) {
+    lastHeading = newHeading;
+    return;
+  }
+
+  if (Math.abs(newHeading - lastHeading) > 1) {
+    headingStableCount++;
+    lastHeading = newHeading;
+  }
+
+  if (headingStableCount >= 2) {
+    realCompassActive = true;
+    stopFallbackCompass();
+    stopProgressBar();
+  }
+
+  heading = newHeading;
+  updateArrow();
 }
 
 function startApp() {
@@ -301,31 +324,19 @@ function startApp() {
   const listenAbsolute = e => {
     if (e.alpha == null) return;
     usingAbsolute = true;
-    realCompassActive = true;
-    stopFallbackCompass();
-    stopProgressBar();
 
-    heading = (360 - e.alpha) % 360;
-    updateArrow();
+    const h = (360 - e.alpha) % 360;
+    handleHeading(h);
   };
 
   const listenRelative = e => {
     if (usingAbsolute) return;
 
     if (e.webkitCompassHeading != null) {
-      realCompassActive = true;
-      stopFallbackCompass();
-      stopProgressBar();
-
-      heading = e.webkitCompassHeading;
-      updateArrow();
+      handleHeading(e.webkitCompassHeading);
     } else if (e.alpha != null) {
-      realCompassActive = true;
-      stopFallbackCompass();
-      stopProgressBar();
-
-      heading = (360 - e.alpha) % 360;
-      updateArrow();
+      const h = (360 - e.alpha) % 360;
+      handleHeading(h);
     }
   };
 
