@@ -66,12 +66,11 @@
       z-index: 10;
     }
 
-    /* ARM 3X ZO GROOT */
     #rotator {
       position: relative;
-      width: 600px;
-      height: 600px;
-      transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
+      width: 400px;
+      height: 400px;
+      transition: transform 0.25s linear;
     }
 
     #person {
@@ -81,10 +80,9 @@
       transform-origin: 66% 24%;
     }
 
-    /* INFOBOX VERPLAATST NAAR BOVEN */
     #infobox {
       position: absolute;
-      bottom: 120px;   /* was 70px */
+      bottom: 130px;
       left: 16px; right: 16px;
       background: rgba(0,0,0,0.6);
       border: 1px solid rgba(255,210,60,0.4);
@@ -104,10 +102,9 @@
       margin-top: 3px;
     }
 
-    /* STARTKNOP IETS LAGER */
     #startbtn {
       position: absolute;
-      bottom: 10px;   /* was 20px */
+      bottom: 10px;
       left: 0; right: 0;
       text-align: center;
       z-index: 20;
@@ -121,6 +118,21 @@
       border-radius: 22px;
       font-size: 13px;
       cursor: pointer;
+    }
+
+    /* LOADING INDICATOR */
+    #loading {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 30;
+    }
+    #loading.active {
+      opacity: 1;
     }
   </style>
 </head>
@@ -153,12 +165,20 @@
         Wacht op start...
       </div>
     </div>
+
+    <div id="loading">Kompas wordt geactiveerd…</div>
   </div>
 
 <script>
 const GOUDA = {lat:52.0116, lng:4.7083};
 const ARM_OFFSET = 270;
-let heading = 0, userLat = null, userLng = null, started = false;
+
+let heading = 0;
+let userLat = null, userLng = null;
+let started = false;
+let realCompassActive = false;
+let fallbackAngle = 0;
+let fallbackInterval = null;
 
 function toRad(d) { return d * Math.PI / 180; }
 
@@ -185,12 +205,28 @@ function compassDir(b) {
 
 function updateArrow() {
   if (userLat === null) return;
+
   const b = bearing(userLat, userLng, GOUDA.lat, GOUDA.lng);
+
   const angle = (b - heading - ARM_OFFSET + 720) % 360;
   document.getElementById('rotator').style.transform = 'rotate('+angle+'deg)';
+
   document.getElementById('dir').textContent = 'Gouda ligt ' + compassDir(b);
   document.getElementById('dist').textContent =
     distance(userLat, userLng, GOUDA.lat, GOUDA.lng) + ' km van jou vandaan';
+}
+
+function startFallbackCompass() {
+  fallbackInterval = setInterval(() => {
+    if (realCompassActive) return;
+    fallbackAngle = (fallbackAngle + 2) % 360;
+    heading = fallbackAngle;
+    updateArrow();
+  }, 30);
+}
+
+function stopFallbackCompass() {
+  clearInterval(fallbackInterval);
 }
 
 function startApp() {
@@ -199,6 +235,11 @@ function startApp() {
 
   document.querySelector('button').textContent = 'Actief...';
   document.getElementById('status').textContent = 'GPS ophalen...';
+
+  document.getElementById('loading').classList.add('active');
+
+  // fallback kompas direct starten
+  startFallbackCompass();
 
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
@@ -223,16 +264,29 @@ function startApp() {
   const listenAbsolute = e => {
     if (e.alpha == null) return;
     usingAbsolute = true;
+    realCompassActive = true;
+    stopFallbackCompass();
+    document.getElementById('loading').classList.remove('active');
+
     heading = (360 - e.alpha) % 360;
     updateArrow();
   };
 
   const listenRelative = e => {
     if (usingAbsolute) return;
+
     if (e.webkitCompassHeading != null) {
+      realCompassActive = true;
+      stopFallbackCompass();
+      document.getElementById('loading').classList.remove('active');
+
       heading = e.webkitCompassHeading;
       updateArrow();
     } else if (e.alpha != null) {
+      realCompassActive = true;
+      stopFallbackCompass();
+      document.getElementById('loading').classList.remove('active');
+
       heading = (360 - e.alpha) % 360;
       updateArrow();
     }
