@@ -60,6 +60,16 @@
       margin-top: 3px;
     }
 
+    #gamebtn {
+      margin-top: 10px;
+      background: rgba(255,210,60,0.2);
+      border: 1px solid rgba(255,210,60,0.5);
+      color: #ffd23c;
+      padding: 6px 14px;
+      border-radius: 14px;
+      font-size: 12px;
+    }
+
     #compass-area {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
@@ -128,7 +138,6 @@
       opacity: 1;
     }
 
-    /* KNIPPEREN ALS VOL */
     @keyframes blink {
       0% { opacity: 1; }
       50% { opacity: 0.3; }
@@ -144,12 +153,6 @@
     }
 
     button {
-      background: rgba(255,210,60,0.15);
-      border: 1px solid rgba(255,210,60,0.5);
-      color: rgba(255,210,60,1);
-      padding: 10px 28px;
-      border-radius: 22px;
-      font-size: 13px;
       cursor: pointer;
     }
   </style>
@@ -157,18 +160,22 @@
 
 <body>
   <div id="app">
-    <img id="bg" src="gouda.jpg" alt="Gouda">
+
+    <img id="bg" src="gouda.jpg">
 
     <div id="overlay"></div>
 
     <div id="title">
       <h1>Waar ligt Gouda?</h1>
       <p>Kompas richt zich naar Gouda</p>
+
+      <!-- NIEUWE KNOP -->
+      <button id="gamebtn" onclick="location.href='game.html'">Ga naar game</button>
     </div>
 
     <div id="compass-area">
       <div id="rotator">
-        <img id="person" src="arm.png" alt="Arm wijst">
+        <img id="person" src="arm.png">
       </div>
     </div>
 
@@ -187,6 +194,7 @@
         Wacht op start...
       </div>
     </div>
+
   </div>
 
 <script>
@@ -202,125 +210,122 @@ let fallbackInterval = null;
 let progress = 0;
 let progressInterval = null;
 
-function toRad(d) { return d * Math.PI / 180; }
+function toRad(d){return d*Math.PI/180;}
 
-function bearing(lat1, lng1, lat2, lng2) {
-  const dL = toRad(lng2-lng1);
-  const y = Math.sin(dL)*Math.cos(toRad(lat2));
-  const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) -
-            Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dL);
+function bearing(lat1,lng1,lat2,lng2){
+  const dL=toRad(lng2-lng1);
+  const y=Math.sin(dL)*Math.cos(toRad(lat2));
+  const x=Math.cos(toRad(lat1))*Math.sin(toRad(lat2))-
+          Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(dL);
   return (Math.atan2(y,x)*180/Math.PI+360)%360;
 }
 
-function distance(lat1, lng1, lat2, lng2) {
-  const R=6371, dLat=toRad(lat2-lat1), dL=toRad(lng2-lng1);
-  const a=Math.sin(dLat/2)**2 +
+function distance(lat1,lng1,lat2,lng2){
+  const R=6371,dLat=toRad(lat2-lat1),dL=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2+
           Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dL/2)**2;
   return Math.round(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
 }
 
-function compassDir(b) {
+function compassDir(b){
   return ['Noord','NNO','Noord-Oost','ONO','Oost','OZO','Zuid-Oost','ZZO',
           'Zuid','ZZW','Zuid-West','WZW','West','WNW','Noord-West','NNW']
           [Math.round(b/22.5)%16];
 }
 
-function updateArrow() {
-  if (userLat === null) return;
+function updateArrow(){
+  if(userLat===null) return;
 
-  const b = bearing(userLat, userLng, GOUDA.lat, GOUDA.lng);
-  const angle = (b - heading - ARM_OFFSET + 720) % 360;
+  const b=bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
+  const angle=(b-heading-ARM_OFFSET+720)%360;
 
-  document.getElementById('rotator').style.transform = 'rotate('+angle+'deg)';
-  document.getElementById('dir').textContent = 'Gouda ligt ' + compassDir(b);
-  document.getElementById('dist').textContent =
-    distance(userLat, userLng, GOUDA.lat, GOUDA.lng) + ' km van jou vandaan';
+  document.getElementById('rotator').style.transform=`rotate(${angle}deg)`;
+  document.getElementById('dir').textContent='Gouda ligt '+compassDir(b);
+  document.getElementById('dist').textContent=
+    distance(userLat,userLng,GOUDA.lat,GOUDA.lng)+' km van jou vandaan';
+
+  if(document.getElementById('dir').textContent.startsWith("Gouda ligt")){
+    stopFallbackCompass();
+    stopProgressBar();
+  }
 }
 
-function startFallbackCompass() {
-  fallbackInterval = setInterval(() => {
-    fallbackAngle = (fallbackAngle + 2) % 360;
-    heading = fallbackAngle;
+function startFallbackCompass(){
+  fallbackInterval=setInterval(()=>{
+    fallbackAngle=(fallbackAngle+2)%360;
+    heading=fallbackAngle;
     updateArrow();
-  }, 30);
+  },30);
 }
 
-function stopFallbackCompass() {
+function stopFallbackCompass(){
   clearInterval(fallbackInterval);
 }
 
-function startProgressBar() {
-  const bar = document.getElementById('progress-bar');
-  const container = document.getElementById('progress-container');
+function startProgressBar(){
+  const bar=document.getElementById('progress-bar');
+  const container=document.getElementById('progress-container');
   container.classList.add('active');
 
-  progressInterval = setInterval(() => {
-    progress += 1;
-    if (progress >= 100) {
-      progress = 100;
-      bar.style.animation = "blink 1s infinite";
+  progressInterval=setInterval(()=>{
+    progress+=1;
+    if(progress>=100){
+      progress=100;
+      bar.style.animation="blink 1s infinite";
     }
-    bar.style.width = progress + "%";
-  }, 50);
+    bar.style.width=progress+"%";
+  },50);
 }
 
-function stopProgressBar() {
+function stopProgressBar(){
   clearInterval(progressInterval);
   document.getElementById('progress-container').classList.remove('active');
 }
 
-function startApp() {
-  if (started) return;
-  started = true;
+function startApp(){
+  if(started) return;
+  started=true;
 
-  document.querySelector('button').textContent = 'Actief...';
+  document.querySelector('#startbtn button').textContent='Actief...';
 
   startFallbackCompass();
   startProgressBar();
 
-  // GPS ophalen
-  if ('geolocation' in navigator) {
+  if('geolocation' in navigator){
     navigator.geolocation.getCurrentPosition(
-      p => {
-        userLat = p.coords.latitude;
-        userLng = p.coords.longitude;
+      p=>{
+        userLat=p.coords.latitude;
+        userLng=p.coords.longitude;
         updateArrow();
-        navigator.geolocation.watchPosition(p => {
-          userLat = p.coords.latitude;
-          userLng = p.coords.longitude;
+        navigator.geolocation.watchPosition(p=>{
+          userLat=p.coords.latitude;
+          userLng=p.coords.longitude;
           updateArrow();
-        }, null, {enableHighAccuracy:true});
+        },null,{enableHighAccuracy:true});
       },
-      () => { userLat = 52.37; userLng = 4.89; updateArrow(); }
+      ()=>{userLat=52.37;userLng=4.89;updateArrow();}
     );
   } else {
-    userLat = 52.37; userLng = 4.89; updateArrow();
+    userLat=52.37;userLng=4.89;updateArrow();
   }
 
-  // Kompas events
-  const listen = e => {
-    let h = null;
+  const listen=e=>{
+    let h=null;
 
-    if (e.webkitCompassHeading != null) {
-      h = e.webkitCompassHeading;
-    } else if (e.alpha != null) {
-      h = (360 - e.alpha) % 360;
+    if(e.webkitCompassHeading!=null){
+      h=e.webkitCompassHeading;
+    } else if(e.alpha!=null){
+      h=(360-e.alpha)%360;
     }
 
-    if (h != null && !isNaN(h)) {
-      heading = h;
+    if(h!=null && !isNaN(h)){
+      heading=h;
       updateArrow();
-    }
-
-    // CHECK: tekst veranderd naar "Gouda ligt..."
-    if (document.getElementById('dir').textContent.startsWith("Gouda ligt")) {
-      stopFallbackCompass();
-      stopProgressBar();
     }
   };
 
-  window.addEventListener('deviceorientation', listen, true);
-  window.addEventListener('deviceorientationabsolute', listen, true);
+  window.addEventListener('deviceorientation',listen,true);
+  window.addEventListener('deviceorientationabsolute',listen,true);
 }
 </script>
 
