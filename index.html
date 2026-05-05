@@ -128,6 +128,13 @@
       opacity: 1;
     }
 
+    /* KNIPPEREN ALS VOL */
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
     #startbtn {
       position: absolute;
       bottom: 20px;
@@ -189,15 +196,11 @@ const ARM_OFFSET = 270;
 let heading = 0;
 let userLat = null, userLng = null;
 let started = false;
-let realCompassActive = false;
 let fallbackAngle = 0;
 let fallbackInterval = null;
+
 let progress = 0;
 let progressInterval = null;
-
-let lastHeading = null;
-let headingChangeCount = 0;
-let firstRealHeadingTime = null;
 
 function toRad(d) { return d * Math.PI / 180; }
 
@@ -226,10 +229,9 @@ function updateArrow() {
   if (userLat === null) return;
 
   const b = bearing(userLat, userLng, GOUDA.lat, GOUDA.lng);
-
   const angle = (b - heading - ARM_OFFSET + 720) % 360;
-  document.getElementById('rotator').style.transform = 'rotate('+angle+'deg)';
 
+  document.getElementById('rotator').style.transform = 'rotate('+angle+'deg)';
   document.getElementById('dir').textContent = 'Gouda ligt ' + compassDir(b);
   document.getElementById('dist').textContent =
     distance(userLat, userLng, GOUDA.lat, GOUDA.lng) + ' km van jou vandaan';
@@ -237,7 +239,6 @@ function updateArrow() {
 
 function startFallbackCompass() {
   fallbackInterval = setInterval(() => {
-    if (realCompassActive) return;
     fallbackAngle = (fallbackAngle + 2) % 360;
     heading = fallbackAngle;
     updateArrow();
@@ -254,14 +255,13 @@ function startProgressBar() {
   container.classList.add('active');
 
   progressInterval = setInterval(() => {
-    if (realCompassActive) return;
-
     progress += 1;
-    if (progress > 100) progress = 100;
-
+    if (progress >= 100) {
+      progress = 100;
+      bar.style.animation = "blink 1s infinite";
+    }
     bar.style.width = progress + "%";
-
-  }, 80);
+  }, 50);
 }
 
 function stopProgressBar() {
@@ -269,45 +269,16 @@ function stopProgressBar() {
   document.getElementById('progress-container').classList.remove('active');
 }
 
-function handleHeading(newHeading) {
-  if (newHeading == null || isNaN(newHeading)) return;
-
-  if (lastHeading === null) {
-    lastHeading = newHeading;
-    return;
-  }
-
-  const diff = Math.abs(newHeading - lastHeading);
-
-  if (diff > 10) {
-    headingChangeCount++;
-    lastHeading = newHeading;
-
-    if (!firstRealHeadingTime) {
-      firstRealHeadingTime = Date.now();
-    }
-  }
-
-  if (headingChangeCount >= 3 && Date.now() - firstRealHeadingTime > 500) {
-    realCompassActive = true;
-    stopFallbackCompass();
-    stopProgressBar();
-  }
-
-  heading = newHeading;
-  updateArrow();
-}
-
 function startApp() {
   if (started) return;
   started = true;
 
   document.querySelector('button').textContent = 'Actief...';
-  document.getElementById('status').textContent = 'GPS ophalen...';
 
   startFallbackCompass();
   startProgressBar();
 
+  // GPS ophalen
   if ('geolocation' in navigator) {
     navigator.geolocation.getCurrentPosition(
       p => {
@@ -326,47 +297,30 @@ function startApp() {
     userLat = 52.37; userLng = 4.89; updateArrow();
   }
 
-  let usingAbsolute = false;
-
-  const listenAbsolute = e => {
-    if (e.alpha == null) return;
-    usingAbsolute = true;
-
-    const h = (360 - e.alpha) % 360;
-    handleHeading(h);
-  };
-
-  const listenRelative = e => {
-    if (usingAbsolute) return;
+  // Kompas events
+  const listen = e => {
+    let h = null;
 
     if (e.webkitCompassHeading != null) {
-      handleHeading(e.webkitCompassHeading);
+      h = e.webkitCompassHeading;
     } else if (e.alpha != null) {
-      const h = (360 - e.alpha) % 360;
-      handleHeading(h);
+      h = (360 - e.alpha) % 360;
+    }
+
+    if (h != null && !isNaN(h)) {
+      heading = h;
+      updateArrow();
+    }
+
+    // CHECK: tekst veranderd naar "Gouda ligt..."
+    if (document.getElementById('dir').textContent.startsWith("Gouda ligt")) {
+      stopFallbackCompass();
+      stopProgressBar();
     }
   };
 
-  function attachListeners() {
-    window.addEventListener('deviceorientationabsolute', listenAbsolute, true);
-    window.addEventListener('deviceorientation', listenRelative, true);
-    document.getElementById('status').textContent = 'Kompas actief';
-  }
-
-  if (typeof DeviceOrientationEvent !== 'undefined' &&
-      typeof DeviceOrientationEvent.requestPermission === 'function') {
-
-    DeviceOrientationEvent.requestPermission()
-      .then(state => {
-        if (state === 'granted') attachListeners();
-        else document.getElementById('status').textContent =
-          'Geen kompas-toegang — alleen GPS';
-      })
-      .catch(() => attachListeners());
-
-  } else {
-    attachListeners();
-  }
+  window.addEventListener('deviceorientation', listen, true);
+  window.addEventListener('deviceorientationabsolute', listen, true);
 }
 </script>
 
