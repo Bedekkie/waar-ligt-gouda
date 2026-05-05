@@ -189,6 +189,23 @@
       border-radius: 22px;
       font-size: 14px;
     }
+
+    /* CONFETTI */
+    .confetti {
+      position: absolute;
+      width: 8px;
+      height: 12px;
+      background: red;
+      top: -20px;
+      animation: fall 2.5s linear forwards;
+      opacity: 0.9;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) rotate(0deg); }
+      100% { transform: translateY(120vh) rotate(360deg); }
+    }
+
   </style>
 </head>
 
@@ -337,6 +354,28 @@ function stopLoadbar(){
   document.getElementById('loadbar').style.opacity = 0;
 }
 
+/* ------------------ CONFETTI ------------------ */
+
+function launchConfetti() {
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.classList.add("confetti");
+
+    c.style.left = Math.random() * 100 + "%";
+
+    const colors = ["#ff3838", "#ff9f1a", "#fffa65", "#32ff7e", "#18dcff", "#7d5fff"];
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+
+    c.style.animationDuration = (2 + Math.random()*1.5) + "s";
+
+    document.body.appendChild(c);
+
+    setTimeout(()=>c.remove(), 3000);
+  }
+}
+
+/* ------------------ CHECK LOGICA ------------------ */
+
 function checkGuess(){
   startLoadbar();
 
@@ -348,19 +387,25 @@ function checkGuess(){
   saveHighscore(rounded);
   displayHighscores();
 
-  const scoreText = `NEE GOUDA LIGT DAAR, KNEUS!\nJe zat ${rounded}° ernaast`;
-
   setTimeout(()=>{
+
     document.getElementById('rotator').style.transition = "transform 1s ease";
     document.getElementById('rotator').style.transform = `rotate(${correctAngle}deg)`;
 
     stopLoadbar();
 
     const speech = document.getElementById('speech');
-    speech.textContent = scoreText;
-    speech.style.display = "block";
 
+    if (rounded === 0) {
+      launchConfetti();
+      speech.textContent = "PERFECT! 0° verschil!";
+    } else {
+      speech.textContent = `NEE GOUDA LIGT DAAR, KNEUS!\nJe zat ${rounded}° ernaast`;
+    }
+
+    speech.style.display = "block";
     document.getElementById('retrybtn').style.display = "block";
+
   }, 1200);
 }
 
