@@ -10,8 +10,8 @@
 
     html, body {
       background: #000;
-      overflow: hidden;        /* voorkomt scrollen */
-      touch-action: none;      /* voorkomt scroll tijdens draaien */
+      overflow: hidden;
+      touch-action: none;
       height: 100%;
       font-family: sans-serif;
     }
@@ -52,13 +52,13 @@
     #title h1 {
       font-size: 22px; font-weight: 700;
       color: #fff;
-      text-shadow: 0 1px 8px rgba(0,0,0,0.8);
     }
     #title p {
-      font-size: 14px;
-      color: rgba(255,255,255,0.8);
-      margin-top: 6px;
-      font-weight: 600;
+      font-size: 16px;
+      color: rgba(255,255,255,0.9);
+      margin-top: 10px;
+      font-weight: 700;
+      line-height: 1.3;
     }
 
     /* TERUG KNOP */
@@ -101,9 +101,9 @@
     /* LAADBALK */
     #loadbar {
       position: absolute;
-      bottom: 140px;
+      bottom: 180px;   /* hoger gezet */
       left: 16px; right: 16px;
-      height: 10px;
+      height: 12px;
       background: rgba(255,255,255,0.15);
       border-radius: 10px;
       overflow: hidden;
@@ -119,10 +119,16 @@
       transition: width 0.2s linear;
     }
 
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+
     /* CHECK KNOP */
     #checkbtn {
       position: absolute;
-      bottom: 40px;
+      bottom: 120px;   /* hoger gezet */
       left: 0; right: 0;
       text-align: center;
       z-index: 20;
@@ -132,31 +138,35 @@
       background: rgba(255,210,60,0.2);
       border: 1px solid rgba(255,210,60,0.5);
       color: #ffd23c;
-      padding: 10px 28px;
+      padding: 12px 32px;
       border-radius: 22px;
-      font-size: 14px;
+      font-size: 16px;
     }
 
     /* TEKSTBALLON */
     #speech {
       position: absolute;
-      bottom: 120px;
+      bottom: 240px;   /* hoger gezet */
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       color: white;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 14px;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 18px;          /* groter */
+      font-weight: 900;         /* schreeuwerig */
       display: none;
       z-index: 30;
-      border: 1px solid rgba(255,210,60,0.5);
+      border: 2px solid rgba(255,210,60,0.8);
+      text-align: center;
+      white-space: pre-line;
+      text-shadow: 0 0 8px black;
     }
 
     /* OPNIEUW KNOP */
     #retrybtn {
       position: absolute;
-      bottom: 80px;
+      bottom: 70px;   /* hoger gezet */
       left: 0; right: 0;
       text-align: center;
       display: none;
@@ -182,11 +192,12 @@
 
     <div id="title">
       <h1>Waar ligt Gouda?</h1>
-      <p>Draai de arm van Bart naar Gouda</p>
 
       <div id="backbtn">
         <button onclick="location.href='index.html'">Terug naar het kompas</button>
       </div>
+
+      <p>Draai de arm van Bart naar Gouda en druk op "Check!"</p>
     </div>
 
     <div id="compass-area">
@@ -195,12 +206,11 @@
       </div>
     </div>
 
-    <!-- LAADBALK -->
     <div id="loadbar">
       <div id="loadbar-fill"></div>
     </div>
 
-    <div id="speech">NEE GOUDA LIGT DAAR, KNEUS!</div>
+    <div id="speech"></div>
 
     <div id="retrybtn">
       <button onclick="location.reload()">Opnieuw</button>
@@ -267,6 +277,8 @@ function startLoadbar(){
   bar.style.opacity = 1;
   loadProgress = 0;
 
+  fill.style.animation = "blink 1s infinite";
+
   loadInterval = setInterval(()=>{
     loadProgress += 2;
     if(loadProgress > 100) loadProgress = 100;
@@ -280,15 +292,13 @@ function stopLoadbar(){
 }
 
 function checkGuess(){
-  if(userLat===null){
-    startLoadbar();
-    return;
-  }
-
   startLoadbar();
 
   const b = bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
   const correctAngle = b - 270;
+
+  const diff = Math.abs((currentAngle - correctAngle + 540) % 360 - 180);
+  const scoreText = `NEE GOUDA LIGT DAAR, KNEUS!\nJe zat ${Math.round(diff)}° ernaast`;
 
   setTimeout(()=>{
     document.getElementById('rotator').style.transition = "transform 1s ease";
@@ -296,7 +306,10 @@ function checkGuess(){
 
     stopLoadbar();
 
-    document.getElementById('speech').style.display = "block";
+    const speech = document.getElementById('speech');
+    speech.textContent = scoreText;
+    speech.style.display = "block";
+
     document.getElementById('retrybtn').style.display = "block";
   }, 1200);
 }
