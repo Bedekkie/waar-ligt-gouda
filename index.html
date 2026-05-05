@@ -196,7 +196,8 @@ let progress = 0;
 let progressInterval = null;
 
 let lastHeading = null;
-let headingStableCount = 0;
+let headingChangeCount = 0;
+let firstRealHeadingTime = null;
 
 function toRad(d) { return d * Math.PI / 180; }
 
@@ -276,12 +277,18 @@ function handleHeading(newHeading) {
     return;
   }
 
-  if (Math.abs(newHeading - lastHeading) > 1) {
-    headingStableCount++;
+  const diff = Math.abs(newHeading - lastHeading);
+
+  if (diff > 10) {
+    headingChangeCount++;
     lastHeading = newHeading;
+
+    if (!firstRealHeadingTime) {
+      firstRealHeadingTime = Date.now();
+    }
   }
 
-  if (headingStableCount >= 2) {
+  if (headingChangeCount >= 3 && Date.now() - firstRealHeadingTime > 500) {
     realCompassActive = true;
     stopFallbackCompass();
     stopProgressBar();
