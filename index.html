@@ -66,9 +66,11 @@
       z-index: 10;
     }
 
+    /* ARM 3X ZO GROOT */
     #rotator {
       position: relative;
-      width: 260px; height: 260px;
+      width: 600px;
+      height: 600px;
       transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94);
     }
 
@@ -79,8 +81,11 @@
       transform-origin: 66% 24%;
     }
 
+    /* INFOBOX VERPLAATST NAAR BOVEN */
     #infobox {
-      position: absolute; bottom: 70px; left: 16px; right: 16px;
+      position: absolute;
+      bottom: 120px;   /* was 70px */
+      left: 16px; right: 16px;
       background: rgba(0,0,0,0.6);
       border: 1px solid rgba(255,210,60,0.4);
       border-radius: 14px;
@@ -99,9 +104,13 @@
       margin-top: 3px;
     }
 
+    /* STARTKNOP IETS LAGER */
     #startbtn {
-      position: absolute; bottom: 20px; left: 0; right: 0;
-      text-align: center; z-index: 20;
+      position: absolute;
+      bottom: 10px;   /* was 20px */
+      left: 0; right: 0;
+      text-align: center;
+      z-index: 20;
     }
 
     button {
