@@ -80,9 +80,10 @@
       transform-origin: 66% 24%;
     }
 
+    /* INFOBOX */
     #infobox {
       position: absolute;
-      bottom: 150px;
+      bottom: 160px;
       left: 16px; right: 16px;
       background: rgba(0,0,0,0.6);
       border: 1px solid rgba(255,210,60,0.4);
@@ -102,16 +103,16 @@
       margin-top: 3px;
     }
 
-    /* LAADBALK */
+    /* LAADBALK — nu gegarandeerd zichtbaar */
     #progress-container {
       position: absolute;
-      bottom: 95px;
+      bottom: 115px;   /* tussen infobox en startknop */
       left: 16px; right: 16px;
-      height: 8px;
+      height: 10px;
       background: rgba(255,255,255,0.15);
       border-radius: 10px;
       overflow: hidden;
-      z-index: 25;
+      z-index: 9999;
       opacity: 0;
       transition: opacity 0.3s;
     }
@@ -128,9 +129,10 @@
       opacity: 1;
     }
 
+    /* STARTKNOP */
     #startbtn {
       position: absolute;
-      bottom: 10px;
+      bottom: 20px;
       left: 0; right: 0;
       text-align: center;
       z-index: 20;
