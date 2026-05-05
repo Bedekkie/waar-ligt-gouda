@@ -61,6 +61,14 @@
       line-height: 1.3;
     }
 
+    /* HIGHSCORES */
+    #highscores {
+      margin-top: 8px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.2;
+    }
+
     /* TERUG KNOP */
     #backbtn {
       margin-top: 10px;
@@ -101,7 +109,7 @@
     /* LAADBALK */
     #loadbar {
       position: absolute;
-      bottom: 180px;   /* hoger gezet */
+      bottom: 180px;
       left: 16px; right: 16px;
       height: 12px;
       background: rgba(255,255,255,0.15);
@@ -128,7 +136,7 @@
     /* CHECK KNOP */
     #checkbtn {
       position: absolute;
-      bottom: 120px;   /* hoger gezet */
+      bottom: 120px;
       left: 0; right: 0;
       text-align: center;
       z-index: 20;
@@ -146,15 +154,15 @@
     /* TEKSTBALLON */
     #speech {
       position: absolute;
-      bottom: 240px;   /* hoger gezet */
+      bottom: 240px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0,0,0,0.8);
       color: white;
       padding: 14px 18px;
       border-radius: 12px;
-      font-size: 18px;          /* groter */
-      font-weight: 900;         /* schreeuwerig */
+      font-size: 18px;
+      font-weight: 900;
       display: none;
       z-index: 30;
       border: 2px solid rgba(255,210,60,0.8);
@@ -166,7 +174,7 @@
     /* OPNIEUW KNOP */
     #retrybtn {
       position: absolute;
-      bottom: 70px;   /* hoger gezet */
+      bottom: 70px;
       left: 0; right: 0;
       text-align: center;
       display: none;
@@ -198,6 +206,8 @@
       </div>
 
       <p>Draai de arm van Bart naar Gouda en druk op "Check!"</p>
+
+      <div id="highscores"></div>
     </div>
 
     <div id="compass-area">
@@ -224,7 +234,9 @@
 
 <script>
 const GOUDA = {lat:52.0116, lng:4.7083};
+
 let userLat = null, userLng = null;
+let fixedCorrectAngle = null;
 
 let currentAngle = 0;
 let dragging = false;
@@ -232,6 +244,40 @@ let startAngle = 0;
 
 let loadProgress = 0;
 let loadInterval = null;
+
+/* ------------------ HIGHSCORE FUNCTIES ------------------ */
+
+function loadHighscores() {
+  let scores = JSON.parse(localStorage.getItem("goudaScores") || "[]");
+  return scores;
+}
+
+function saveHighscore(score) {
+  let scores = loadHighscores();
+  scores.push(score);
+  scores.sort((a,b)=>a-b);
+  scores = scores.slice(0,3);
+  localStorage.setItem("goudaScores", JSON.stringify(scores));
+}
+
+function displayHighscores() {
+  let scores = loadHighscores();
+  let box = document.getElementById("highscores");
+
+  if (scores.length === 0) {
+    box.textContent = "Highscores: nog geen scores";
+    return;
+  }
+
+  let html = "Highscores:<br>";
+  scores.forEach((s,i)=>{
+    html += `${i+1}. ${s}°<br>`;
+  });
+
+  box.innerHTML = html;
+}
+
+/* -------------------------------------------------------- */
 
 function toRad(d){return d*Math.PI/180;}
 
@@ -294,11 +340,15 @@ function stopLoadbar(){
 function checkGuess(){
   startLoadbar();
 
-  const b = bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
-  const correctAngle = b - 270;
+  const correctAngle = fixedCorrectAngle;
 
   const diff = Math.abs((currentAngle - correctAngle + 540) % 360 - 180);
-  const scoreText = `NEE GOUDA LIGT DAAR, KNEUS!\nJe zat ${Math.round(diff)}° ernaast`;
+  const rounded = Math.round(diff);
+
+  saveHighscore(rounded);
+  displayHighscores();
+
+  const scoreText = `NEE GOUDA LIGT DAAR, KNEUS!\nJe zat ${rounded}° ernaast`;
 
   setTimeout(()=>{
     document.getElementById('rotator').style.transition = "transform 1s ease";
@@ -314,12 +364,24 @@ function checkGuess(){
   }, 1200);
 }
 
+/* ⭐ GPS EENMALIG OPHALEN → BEARING VASTZETTEN */
 navigator.geolocation.getCurrentPosition(
   p=>{
     userLat=p.coords.latitude;
     userLng=p.coords.longitude;
+
+    const b = bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
+    fixedCorrectAngle = b - 270;
+
+    displayHighscores();
   },
-  ()=>{userLat=52.37;userLng=4.89;}
+  ()=>{
+    userLat=52.37; userLng=4.89;
+    const b = bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
+    fixedCorrectAngle = b - 270;
+
+    displayHighscores();
+  }
 );
 </script>
 
