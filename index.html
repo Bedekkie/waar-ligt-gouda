@@ -43,6 +43,7 @@
         rgba(0,0,0,0.75) 100%);
     }
 
+    /* TITELBLOK */
     #title {
       position: absolute; top: 0; left: 0; right: 0;
       padding: 22px 20px 0;
@@ -60,9 +61,10 @@
       margin-top: 3px;
     }
 
+    /* GAME KNOP */
     #gamebtn {
       margin-top: 10px;
-      background: rgba(255,210,60,0.2);
+      background: rgba(255,210,60,0.15);
       border: 1px solid rgba(255,210,60,0.5);
       color: #ffd23c;
       padding: 6px 14px;
@@ -70,6 +72,7 @@
       font-size: 12px;
     }
 
+    /* COMPAS */
     #compass-area {
       position: absolute; inset: 0;
       display: flex; align-items: center; justify-content: center;
@@ -90,6 +93,7 @@
       transform-origin: 66% 24%;
     }
 
+    /* INFO BLOK */
     #infobox {
       position: absolute;
       bottom: 160px;
@@ -144,6 +148,7 @@
       100% { opacity: 1; }
     }
 
+    /* START KNOP BLOK */
     #startbtn {
       position: absolute;
       bottom: 20px;
@@ -152,9 +157,15 @@
       z-index: 20;
     }
 
-    button {
-      cursor: pointer;
+    #startbtn button {
+      background: rgba(255,210,60,0.15);
+      border: 1px solid rgba(255,210,60,0.5);
+      color: rgba(255,210,60,1);
+      padding: 10px 28px;
+      border-radius: 22px;
+      font-size: 13px;
     }
+
   </style>
 </head>
 
@@ -169,7 +180,7 @@
       <h1>Waar ligt Gouda?</h1>
       <p>Kompas richt zich naar Gouda</p>
 
-      <!-- NIEUWE KNOP -->
+      <!-- GAME KNOP -->
       <button id="gamebtn" onclick="location.href='game.html'">Ga naar game</button>
     </div>
 
@@ -198,6 +209,9 @@
   </div>
 
 <script>
+/* --- SCRIPT IS IDENTIEK AAN JE WERKENDE VERSIE --- */
+/* (ik laat het staan zodat je niets hoeft te debuggen) */
+
 const GOUDA = {lat:52.0116, lng:4.7083};
 const ARM_OFFSET = 270;
 
