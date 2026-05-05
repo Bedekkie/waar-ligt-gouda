@@ -7,20 +7,20 @@
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
+
+    html, body {
       background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      overflow: hidden;        /* voorkomt scrollen */
+      touch-action: none;      /* voorkomt scroll tijdens draaien */
+      height: 100%;
       font-family: sans-serif;
     }
 
     #app {
       position: relative;
       width: min(380px, 100vw);
-      aspect-ratio: 9/16;
+      height: 100vh;
+      margin: 0 auto;
       border-radius: 20px;
       overflow: hidden;
       background: #111;
@@ -55,17 +55,18 @@
       text-shadow: 0 1px 8px rgba(0,0,0,0.8);
     }
     #title p {
-      font-size: 11px;
-      color: rgba(255,255,255,0.6);
-      margin-top: 3px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+      margin-top: 6px;
+      font-weight: 600;
     }
 
     /* TERUG KNOP */
     #backbtn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
+      margin-top: 10px;
+      text-align: center;
       z-index: 30;
+      position: relative;
     }
     #backbtn button {
       background: rgba(255,210,60,0.2);
@@ -95,6 +96,27 @@
       width: 100%; height: 100%;
       object-fit: contain;
       transform-origin: 66% 24%;
+    }
+
+    /* LAADBALK */
+    #loadbar {
+      position: absolute;
+      bottom: 140px;
+      left: 16px; right: 16px;
+      height: 10px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #loadbar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ffd23c, #ffea9c);
+      box-shadow: 0 0 8px #ffd23c;
+      transition: width 0.2s linear;
     }
 
     /* CHECK KNOP */
@@ -156,22 +178,26 @@
   <div id="app">
 
     <img id="bg" src="gouda.jpg">
-
     <div id="overlay"></div>
-
-    <div id="backbtn">
-      <button onclick="location.href='index.html'">Terug naar het kompas</button>
-    </div>
 
     <div id="title">
       <h1>Waar ligt Gouda?</h1>
-      <p>Draai de man naar Gouda</p>
+      <p>Draai de arm van Bart naar Gouda</p>
+
+      <div id="backbtn">
+        <button onclick="location.href='index.html'">Terug naar het kompas</button>
+      </div>
     </div>
 
     <div id="compass-area">
       <div id="rotator">
         <img id="person" src="arm.png">
       </div>
+    </div>
+
+    <!-- LAADBALK -->
+    <div id="loadbar">
+      <div id="loadbar-fill"></div>
     </div>
 
     <div id="speech">NEE GOUDA LIGT DAAR, KNEUS!</div>
@@ -193,6 +219,9 @@ let userLat = null, userLng = null;
 let currentAngle = 0;
 let dragging = false;
 let startAngle = 0;
+
+let loadProgress = 0;
+let loadInterval = null;
 
 function toRad(d){return d*Math.PI/180;}
 
@@ -231,20 +260,45 @@ document.addEventListener('touchmove', e=>{
 
 document.addEventListener('touchend', ()=> dragging=false);
 
+function startLoadbar(){
+  const bar = document.getElementById('loadbar');
+  const fill = document.getElementById('loadbar-fill');
+
+  bar.style.opacity = 1;
+  loadProgress = 0;
+
+  loadInterval = setInterval(()=>{
+    loadProgress += 2;
+    if(loadProgress > 100) loadProgress = 100;
+    fill.style.width = loadProgress + "%";
+  }, 40);
+}
+
+function stopLoadbar(){
+  clearInterval(loadInterval);
+  document.getElementById('loadbar').style.opacity = 0;
+}
+
 function checkGuess(){
   if(userLat===null){
-    alert("GPS wordt opgehaald...");
+    startLoadbar();
     return;
   }
+
+  startLoadbar();
 
   const b = bearing(userLat,userLng,GOUDA.lat,GOUDA.lng);
   const correctAngle = b - 270;
 
-  document.getElementById('rotator').style.transition = "transform 1s ease";
-  document.getElementById('rotator').style.transform = `rotate(${correctAngle}deg)`;
+  setTimeout(()=>{
+    document.getElementById('rotator').style.transition = "transform 1s ease";
+    document.getElementById('rotator').style.transform = `rotate(${correctAngle}deg)`;
 
-  document.getElementById('speech').style.display = "block";
-  document.getElementById('retrybtn').style.display = "block";
+    stopLoadbar();
+
+    document.getElementById('speech').style.display = "block";
+    document.getElementById('retrybtn').style.display = "block";
+  }, 1200);
 }
 
 navigator.geolocation.getCurrentPosition(
