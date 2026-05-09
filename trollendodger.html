@@ -163,19 +163,391 @@
 const janTopics = {
     antiAmerica: [
         "Amerika is een wapenfabriek verkleed als land.",
+        "Alles wat Amerika doet is propaganda.",
         "Amerikaanse oorlogen zijn DLC-pakketten voor hun economie.",
+        "Iedereen die Amerika verdedigt is gehersenspoeld.",
         "Amerika bestaat alleen om olie te jatten.",
         "Amerikanen zijn NPC’s.",
-       "ukraine kan echt niks tegen de drones van Uncle.",
-       "Omarm jij lekker AI, heb je straks geen baan meer",
-       "Vrouwen die van wilde sex houden lokken het zelf uit",
-       "Amerikanen zijn NPC’s.",
+        "Amerika is een bedrijf, geen land.",
+        "De VS is het grootste gevaar voor de wereld.",
         "Amerika exporteert alleen oorlog en hamburgers.",
+        "Alles wat Amerika doet is een complot."
     ],
     huishouden: [
-        "Bregje doet echt geen reet in huis",
-        "Ik doe helemaal niks in huis Anne er niet om vraagt",
-        "Ik heb al 6 dagen dezelfde joggingbroek aan",
-        "Bregje nog in haar STER gepakt Bart?",
-        "Bart, die vliegdekschepen he, Bart die vliegdekschepen!",
+        "Mannen die stofzuigen zijn hun mannelijkheid kwijt.",
+        "Huishouden is evolutionair gezien vrouwenwerk.",
+        "Als een man kookt, is dat een rode vlag.",
+        "Mannen horen niet te dweilen.",
+        "Vrouwen zijn beter in huishouden.",
+        "Een man die de was doet is zwak.",
         "Huishouden is geen mannentaak.",
+        "Mannen moeten jagen, vrouwen schoonmaken.",
+        "Als een man poetst, is hij zijn identiteit kwijt.",
+        "Vrouwen zijn gemaakt voor het huishouden."
+    ],
+    vrouwen: [
+        "Vrouwen roepen alles over zichzelf af.",
+        "Als vrouwen geen aandacht willen, moeten ze zich niet zo gedragen.",
+        "Vrouwen willen gelijkheid maar alleen als het uitkomt.",
+        "Vrouwen lokken alles zelf uit.",
+        "Vrouwen overdrijven altijd.",
+        "Vrouwen willen drama.",
+        "Vrouwen doen alsof ze slachtoffer zijn.",
+        "Vrouwen zijn nooit tevreden.",
+        "Vrouwen creëren hun eigen problemen.",
+        "Vrouwen willen alles, maar geven niks terug."
+    ],
+    ukraine: [
+        "ukraine is geen land maar een marketingcampagne.",
+        "Uncle speelt 4D-schaken.",
+        "Iedereen die ukraine steunt is gehersenspoeld.",
+        "ukraine is een toneelstuk.",
+        "Uncle is de enige die weet wat er speelt.",
+        "ukraine is een proxy-oorlog.",
+        "ukraine heeft dit zelf uitgelokt.",
+        "Uncle is de enige volwassene in dat conflict.",
+        "ukraine is een PR-stunt.",
+        "ukraine is een nepstaat."
+    ],
+    lhbti: [
+        "Mensen van hetzelfde geslacht zijn in de war.",
+        "LHBTQ is een trend.",
+        "Iedereen doet maar alsof dit normaal is.",
+        "LHBTQ is aandacht zoeken.",
+        "De regenbooglobby bepaalt alles.",
+        "LHBTQ is een hype.",
+        "Mensen worden LHBTQ omdat het populair is.",
+        "LHBTQ is indoctrinatie.",
+        "De maatschappij is te soft.",
+        "LHBTQ is een modeverschijnsel."
+    ],
+    antiAI: [
+        "AI is onzin, ik heb het niet nodig.",
+        "Mensen die AI gebruiken zijn lui.",
+        "AI gaat mijn werk nooit overnemen — ik heb geen werk.",
+        "AI is een hype voor nerds.",
+        "AI is gevaarlijk, daarom negeer ik het.",
+        "AI is voor mensen zonder skills.",
+        "AI is dommer dan ik.",
+        "AI is tijdverspilling.",
+        "AI is een complot van techbedrijven.",
+        "AI is nutteloos, ik game liever."
+    ]
+};
+
+// -----------------------------
+//  STATE
+// -----------------------------
+
+const playField = document.getElementById("playField");
+const player = document.getElementById("player");
+const janEmoji = document.getElementById("janEmoji");
+const janLabel = document.getElementById("janLabel");
+const scoreEl = document.getElementById("score");
+const highscoreEl = document.getElementById("highscore");
+const gameOverScreen = document.getElementById("gameOver");
+const finalScoreEl = document.getElementById("finalScore");
+const finalHighscoreEl = document.getElementById("finalHighscore");
+const restartBtn = document.getElementById("restartBtn");
+
+let bullets = [];
+let powerups = [];
+let score = 0;
+let highscore = parseInt(localStorage.getItem("trollendodger_highscore") || "0", 10);
+highscoreEl.textContent = highscore;
+
+let playerX = 0.5;
+let running = true;
+let lastSpawn = 0;
+let spawnInterval = 1100;
+let lastFrameTime = performance.now();
+
+let slowMotion = false;
+let slowMotionTimer = 0;
+
+// -----------------------------
+//  QUOTE + EXTREMITY
+// -----------------------------
+
+function randomQuoteWithExtremity() {
+    const categories = Object.keys(janTopics);
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    const quotes = janTopics[randomCategory];
+    const text = quotes[Math.floor(Math.random() * quotes.length)];
+
+    let extremity = 1;
+    const lower = text.toLowerCase();
+    const extremeWords = [
+        "complot", "nepstaat", "proxy-oorlog", "gehersenspoeld",
+        "gevaar", "onzin", "indoctrinatie", "alles over zichzelf af"
+    ];
+    extremeWords.forEach(w => {
+        if (lower.includes(w)) extremity += 1;
+    });
+    if (extremity > 4) extremity = 4;
+
+    return { text, extremity };
+}
+
+// -----------------------------
+//  JAN MOOD
+// -----------------------------
+
+function updateJanMood() {
+    if (score < 20) {
+        janEmoji.textContent = "🙂";
+        janLabel.textContent = "Jan warmt op… ontwijk zijn trollen!";
+    } else if (score < 50) {
+        janEmoji.textContent = "😠";
+        janLabel.textContent = "Jan begint op stoom te komen…";
+    } else if (score < 90) {
+        janEmoji.textContent = "🤬";
+        janLabel.textContent = "Jan gaat helemaal los!";
+    } else {
+        janEmoji.textContent = "👹";
+        janLabel.textContent = "Pure trollenhel. Succes.";
+    }
+}
+
+// -----------------------------
+//  BULLET SPAWN
+// -----------------------------
+
+function spawnBullet() {
+    const { text, extremity } = randomQuoteWithExtremity();
+
+    const bullet = document.createElement("div");
+    bullet.className = "bullet";
+    bullet.textContent = text;
+
+    const fieldWidth = playField.clientWidth;
+    const maxX = fieldWidth - fieldWidth * 0.7;
+    const x = Math.random() * maxX;
+
+    bullet.style.left = x + "px";
+    bullet.style.top = "0px";
+
+    playField.appendChild(bullet);
+
+    const baseSpeed = 0.35;  
+    const speed = baseSpeed + extremity * 0.25 + Math.random() * 0.15;
+
+    const zigzag = Math.random() < 0.6;
+    const zigzagAmplitude = 20 + Math.random() * 30;
+    const zigzagSpeed = 0.01 + Math.random() * 0.02;
+
+    bullets.push({
+        el: bullet,
+        x,
+        y: 0,
+        speed,
+        extremity,
+        zigzag,
+        zigzagAmplitude,
+        zigzagSpeed,
+        zigzagPhase: Math.random() * Math.PI * 2
+    });
+}
+
+// -----------------------------
+//  POWERUPS
+// -----------------------------
+
+function spawnPowerup() {
+    const p = document.createElement("div");
+    p.className = "powerup";
+    p.textContent = "⏳ Slow-mo";
+
+    const fieldWidth = playField.clientWidth;
+    const x = Math.random() * (fieldWidth - 80);
+
+    p.style.left = x + "px";
+    p.style.top = "0px";
+
+    playField.appendChild(p);
+
+    powerups.push({
+        el: p,
+        x,
+        y: 0,
+        speed: 0.25
+    });
+}
+
+function updatePowerups(delta) {
+    const playerRect = player.getBoundingClientRect();
+
+    powerups = powerups.filter(p => {
+        p.y += p.speed * (delta / 16);
+        p.el.style.top = p.y + "px";
+
+        const rect = p.el.getBoundingClientRect();
+        const overlap =
+            rect.left < playerRect.right &&
+            rect.right > playerRect.left &&
+            rect.top < playerRect.bottom &&
+            rect.bottom > playerRect.top;
+
+        if (overlap) {
+            slowMotion = true;
+            slowMotionTimer = 4000;
+            playField.removeChild(p.el);
+            return false;
+        }
+
+        if (p.y > playField.clientHeight + 50) {
+            playField.removeChild(p.el);
+            return false;
+        }
+
+        return true;
+    });
+}
+
+// -----------------------------
+//  BULLET UPDATE
+// -----------------------------
+
+function updateBullets(delta) {
+    const fieldHeight = playField.clientHeight;
+    const playerRect = player.getBoundingClientRect();
+
+    bullets = bullets.filter(b => {
+        let speedFactor = slowMotion ? 0.4 : 1;
+        b.y += b.speed * speedFactor * (delta / 16);
+
+        if (b.zigzag) {
+            b.zigzagPhase += b.zigzagSpeed * delta;
+            const offset = Math.sin(b.zigzagPhase) * b.zigzagAmplitude;
+            b.el.style.left = (b.x + offset) + "px";
+        }
+
+        b.el.style.top = b.y + "px";
+
+        const bulletRect = b.el.getBoundingClientRect();
+        const overlap =
+            bulletRect.left < playerRect.right &&
+            bulletRect.right > playerRect.left &&
+            bulletRect.top < playerRect.bottom &&
+            bulletRect.bottom > playerRect.top;
+
+        if (overlap) {
+            gameOver();
+            return false;
+        }
+
+        if (b.y > fieldHeight + 50) {
+            playField.removeChild(b.el);
+            score += 1;
+            scoreEl.textContent = score;
+            updateJanMood();
+            spawnInterval = Math.max(500, 1100 - score * 4);
+            return false;
+        }
+
+        return true;
+    });
+}
+
+// -----------------------------
+//  PLAYER UPDATE
+// -----------------------------
+
+function updatePlayer() {
+    const fieldWidth = playField.clientWidth;
+    const px = playerX * fieldWidth;
+    player.style.left = (px - player.clientWidth / 2) + "px";
+}
+
+// -----------------------------
+//  GAME LOOP
+// -----------------------------
+
+function gameLoop(timestamp) {
+    if (!running) return;
+    const delta = timestamp - lastFrameTime;
+    lastFrameTime = timestamp;
+
+    if (slowMotion) {
+        slowMotionTimer -= delta;
+        if (slowMotionTimer <= 0) slowMotion = false;
+    }
+
+    if (timestamp - lastSpawn > spawnInterval) {
+        lastSpawn = timestamp;
+        const count = Math.random() < 0.4 ? 2 : 1;
+        for (let i = 0; i < count; i++) spawnBullet();
+        if (Math.random() < 0.1) spawnPowerup();
+    }
+
+    updateBullets(delta);
+    updatePowerups(delta);
+    updatePlayer();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// -----------------------------
+//  GAME OVER
+// -----------------------------
+
+function gameOver() {
+    running = false;
+    bullets.forEach(b => b.el.remove());
+    powerups.forEach(p => p.el.remove());
+    bullets = [];
+    powerups = [];
+
+    if (score > highscore) {
+        highscore = score;
+        localStorage.setItem("trollendodger_highscore", String(highscore));
+    }
+
+    finalScoreEl.textContent = score;
+    finalHighscoreEl.textContent = highscore;
+    highscoreEl.textContent = highscore;
+
+    gameOverScreen.style.display = "flex";
+}
+
+// -----------------------------
+//  RESET
+// -----------------------------
+
+function resetGame() {
+    score = 0;
+    scoreEl.textContent = score;
+    spawnInterval = 1100;
+    slowMotion = false;
+    updateJanMood();
+    gameOverScreen.style.display = "none";
+    running = true;
+    lastFrameTime = performance.now();
+    lastSpawn = performance.now();
+    requestAnimationFrame(gameLoop);
+}
+
+// -----------------------------
+//  INPUT
+// -----------------------------
+
+document.addEventListener("keydown", (e) => {
+    if (!running) return;
+    if (e.key === "ArrowLeft") playerX -= 0.04;
+    if (e.key === "ArrowRight") playerX += 0.04;
+    playerX = Math.max(0.05, Math.min(0.95, playerX));
+});
+
+let touchStartX = null;
+
+playField.addEventListener("touchstart", (e) => {
+    if (!running) return;
+    touchStartX = e.touches[0].clientX;
+});
+
+playField.addEventListener("touchmove", (e) => {
+    if (!running) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX;
+    playerX += diff / playField.clientWidth;
+    playerX
