@@ -75,7 +75,7 @@
 
     .bullet {
         position: absolute;
-        top: 60px;
+        top: 0;
         left: 0;
         padding: 6px 10px;
         background: #b71c1c;
@@ -329,7 +329,7 @@ function spawnBullet() {
 
     playField.appendChild(bullet);
 
-    const baseSpeed = 0.35;  
+    const baseSpeed = 0.35;
     const speed = baseSpeed + extremity * 0.25 + Math.random() * 0.15;
 
     const zigzag = Math.random() < 0.6;
@@ -542,12 +542,44 @@ let touchStartX = null;
 
 playField.addEventListener("touchstart", (e) => {
     if (!running) return;
-    touchStartX = e.touches[0].clientX;
+    if (e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+    }
 });
 
 playField.addEventListener("touchmove", (e) => {
     if (!running) return;
-    const currentX = e.touches[0].clientX;
-    const diff = currentX - touchStartX;
-    playerX += diff / playField.clientWidth;
-    playerX
+    if (e.touches.length > 0 && touchStartX !== null) {
+        const currentX = e.touches[0].clientX;
+        const diff = currentX - touchStartX;
+        const fieldWidth = playField.clientWidth;
+        playerX += diff / fieldWidth;
+        playerX = Math.max(0.05, Math.min(0.95, playerX));
+        touchStartX = currentX;
+    }
+});
+
+playField.addEventListener("touchend", () => {
+    touchStartX = null;
+});
+
+// -----------------------------
+//  RESTART
+// -----------------------------
+
+restartBtn.addEventListener("click", () => {
+    resetGame();
+});
+
+// -----------------------------
+//  START
+// -----------------------------
+
+playerX = 0.5;
+updatePlayer();
+updateJanMood();
+requestAnimationFrame(gameLoop);
+</script>
+
+</body>
+</html>
