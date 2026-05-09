@@ -1,3 +1,143 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jan's Trollenmeter</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    #janEmoji {
+        font-size: 80px;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    #quoteBox {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        text-align: center;
+        font-size: 22px;
+        line-height: 1.4;
+    }
+
+    #meterContainer {
+        width: 90%;
+        height: 25px;
+        background: #333;
+        border-radius: 20px;
+        margin: 10px auto;
+        overflow: hidden;
+    }
+
+    #meter {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336);
+        transition: width 0.1s linear;
+    }
+
+    #buttons {
+        display: flex;
+        justify-content: space-around;
+        padding: 15px 10px 25px 10px;
+        gap: 10px;
+    }
+
+    button {
+        flex: 1;
+        padding: 12px;
+        font-size: 14px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #fff;
+    }
+
+    #ignore { background: #4caf50; }
+    #fact { background: #2196f3; }
+    #calm { background: #ff9800; }
+
+    #gameOver {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+    #gameOver img {
+        width: 200px;
+        height: auto;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    #restart {
+        margin-top: 20px;
+        padding: 12px 20px;
+        font-size: 18px;
+        border: none;
+        border-radius: 10px;
+        background: #f44336;
+        color: white;
+        cursor: pointer;
+    }
+
+    #score {
+        text-align: center;
+        font-size: 14px;
+        color: #ccc;
+        margin-bottom: 5px;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="janEmoji">🙂</div>
+
+<div id="quoteBox">Jan is zich aan het opwarmen…</div>
+
+<div id="meterContainer">
+    <div id="meter"></div>
+</div>
+
+<div id="score">Rondes overleefd: <span id="rounds">0</span></div>
+
+<div id="buttons">
+    <button id="ignore">Negeer</button>
+    <button id="fact">Factcheck</button>
+    <button id="calm">Laat hem uitrazen</button>
+</div>
+
+<div id="gameOver">
+    <img src="jan.png" alt="Jan">
+    <div style="font-size:26px;">HA! Je trapte in de trollenval, kneus!</div>
+    <div style="font-size:16px; margin-top:10px;">
+        Je overleefde <span id="finalRounds">0</span> rondes.
+    </div>
+    <button id="restart">Opnieuw</button>
+</div>
+
 <script>
 // -----------------------------
 //  TROLLENONDERWERPEN VAN JAN
@@ -10,73 +150,73 @@ const janTopics = {
         "Amerikaanse oorlogen zijn gewoon DLC-pakketten voor hun economie.",
         "Iedereen die Amerika verdedigt is gehersenspoeld.",
         "Amerika bestaat alleen om olie te jatten.",
-        "Amerikanen denken dat ze vrij zijn, maar ze zijn gewoon NPC’s.",
+        "Amerikanen denken dat ze vrij zijn, maar ze zijn NPC’s.",
         "Amerika is een bedrijf, geen land.",
-        "De VS is het grootste gevaar voor de wereld, punt.",
+        "De VS is het grootste gevaar voor de wereld.",
         "Amerika exporteert alleen oorlog en hamburgers.",
-        "Alles wat Amerika doet is een complot, dat durft niemand te zeggen."
+        "Alles wat Amerika doet is een complot."
     ],
 
     huishouden: [
-        "Mannen die stofzuigen zijn hun mannelijkheid kwijt, punt.",
-        "Huishouden is evolutionair gezien vrouwenwerk, dat is gewoon zo.",
+        "Mannen die stofzuigen zijn hun mannelijkheid kwijt.",
+        "Huishouden is evolutionair gezien vrouwenwerk.",
         "Als een man kookt, is dat een rode vlag.",
-        "Mannen horen niet te dweilen, klaar.",
-        "Vrouwen zijn beter in huishouden, dus laat ze dat doen.",
-        "Een man die de was doet is gewoon zwak.",
-        "Huishouden is geen mannentaak, dat weet iedereen.",
-        "Mannen moeten jagen, vrouwen moeten schoonmaken.",
+        "Mannen horen niet te dweilen.",
+        "Vrouwen zijn beter in huishouden.",
+        "Een man die de was doet is zwak.",
+        "Huishouden is geen mannentaak.",
+        "Mannen moeten jagen, vrouwen schoonmaken.",
         "Als een man poetst, is hij zijn identiteit kwijt.",
-        "Vrouwen zijn gemaakt voor het huishouden, punt."
+        "Vrouwen zijn gemaakt voor het huishouden."
     ],
 
     vrouwen: [
-        "Vrouwen roepen alles over zichzelf af, dat durft niemand te zeggen.",
+        "Vrouwen roepen alles over zichzelf af.",
         "Als vrouwen geen aandacht willen, moeten ze zich niet zo gedragen.",
         "Vrouwen willen gelijkheid maar alleen als het uitkomt.",
-        "Vrouwen lokken alles zelf uit, dat is gewoon zo.",
-        "Vrouwen overdrijven altijd hun problemen.",
-        "Vrouwen willen drama, anders vervelen ze zich.",
-        "Vrouwen doen alsof ze slachtoffer zijn, maar ze willen aandacht.",
-        "Vrouwen zijn nooit tevreden, punt.",
+        "Vrouwen lokken alles zelf uit.",
+        "Vrouwen overdrijven altijd.",
+        "Vrouwen willen drama.",
+        "Vrouwen doen alsof ze slachtoffer zijn.",
+        "Vrouwen zijn nooit tevreden.",
         "Vrouwen creëren hun eigen problemen.",
         "Vrouwen willen alles, maar geven niks terug."
     ],
 
     ukraine: [
         "ukraine is geen land maar een marketingcampagne.",
-        "Uncle speelt 4D-schaken, dat snapt niemand.",
+        "Uncle speelt 4D-schaken.",
         "Iedereen die ukraine steunt is gehersenspoeld.",
-        "ukraine is een toneelstuk voor de media.",
-        "Uncle is de enige die weet wat er echt speelt.",
-        "ukraine is gewoon een proxy-oorlog, punt.",
+        "ukraine is een toneelstuk.",
+        "Uncle is de enige die weet wat er speelt.",
+        "ukraine is een proxy-oorlog.",
         "ukraine heeft dit zelf uitgelokt.",
-        "Uncle is de enige volwassen persoon in dat conflict.",
+        "Uncle is de enige volwassene in dat conflict.",
         "ukraine is een PR-stunt.",
-        "ukraine is een nepstaat, dat weet iedereen."
+        "ukraine is een nepstaat."
     ],
 
     lhbti: [
-        "Mensen van hetzelfde geslacht zijn gewoon in de war, punt.",
-        "LHBTQ is een trend die overwaait.",
+        "Mensen van hetzelfde geslacht zijn in de war.",
+        "LHBTQ is een trend.",
         "Iedereen doet maar alsof dit normaal is.",
-        "LHBTQ is aandacht zoeken, klaar.",
-        "De regenbooglobby bepaalt alles tegenwoordig.",
-        "LHBTQ is een hype, geen identiteit.",
+        "LHBTQ is aandacht zoeken.",
+        "De regenbooglobby bepaalt alles.",
+        "LHBTQ is een hype.",
         "Mensen worden LHBTQ omdat het populair is.",
-        "LHBTQ is indoctrinatie, dat durft niemand te zeggen.",
-        "De maatschappij is te soft geworden.",
+        "LHBTQ is indoctrinatie.",
+        "De maatschappij is te soft.",
         "LHBTQ is een modeverschijnsel."
     ],
 
     antiAI: [
         "AI is onzin, ik heb het niet nodig.",
         "Mensen die AI gebruiken zijn lui.",
-        "AI gaat toch nooit mijn werk overnemen — ik heb geen werk.",
+        "AI gaat mijn werk nooit overnemen — ik heb geen werk.",
         "AI is een hype voor nerds.",
         "AI is gevaarlijk, daarom negeer ik het.",
-        "AI is voor mensen zonder echte skills.",
-        "AI is dommer dan ik, punt.",
+        "AI is voor mensen zonder skills.",
+        "AI is dommer dan ik.",
         "AI is tijdverspilling.",
         "AI is een complot van techbedrijven.",
         "AI is nutteloos, ik game liever."
@@ -84,7 +224,16 @@ const janTopics = {
 };
 
 // -----------------------------
-//  RANDOM QUOTE GENERATOR
+//  STATE
+// -----------------------------
+
+let meter = 0;
+let meterSpeed = 0.25;
+let interval;
+let rounds = 0;
+
+// -----------------------------
+//  HELPER FUNCTIES
 // -----------------------------
 
 function randomQuote() {
@@ -93,5 +242,104 @@ function randomQuote() {
     const quotes = janTopics[randomCategory];
     return quotes[Math.floor(Math.random() * quotes.length)];
 }
+
+function updateQuote() {
+    document.getElementById("quoteBox").innerText = randomQuote();
+}
+
+function updateJanEmoji(level) {
+    const el = document.getElementById("janEmoji");
+
+    if (level < 25) el.innerText = "🙂";
+    else if (level < 50) el.innerText = "😠";
+    else if (level < 75) el.innerText = "🤬";
+    else el.innerText = "👹";
+}
+
+function updateScore() {
+    document.getElementById("rounds").innerText = rounds;
+}
+
+// -----------------------------
+//  GAME LOOP
+// -----------------------------
+
+function startGame() {
+    meter = 0;
+    meterSpeed = 0.25;
+    rounds = 0;
+    updateScore();
+    updateQuote();
+    document.getElementById("meter").style.width = "0%";
+    updateJanEmoji(meter);
+
+    if (interval) clearInterval(interval);
+    interval = setInterval(() => {
+        meter += meterSpeed;
+        if (meter >= 100) {
+            meter = 100;
+            document.getElementById("meter").style.width = meter + "%";
+            updateJanEmoji(meter);
+            gameOver();
+        } else {
+            document.getElementById("meter").style.width = meter + "%";
+            updateJanEmoji(meter);
+        }
+    }, 100);
+}
+
+function gameOver() {
+    clearInterval(interval);
+    document.getElementById("finalRounds").innerText = rounds;
+    document.getElementById("gameOver").style.display = "flex";
+}
+
+// -----------------------------
+//  BUTTONS
+// -----------------------------
+
+document.getElementById("ignore").onclick = () => {
+    meter -= 10;
+    if (meter < 0) meter = 0;
+    rounds++;
+    updateScore();
+    updateQuote();
+    document.getElementById("meter").style.width = meter + "%";
+    updateJanEmoji(meter);
+};
+
+document.getElementById("fact").onclick = () => {
+    meter = 0;
+    meterSpeed += 0.05;
+    rounds++;
+    updateScore();
+    updateQuote();
+    document.getElementById("meter").style.width = meter + "%";
+    updateJanEmoji(meter);
+};
+
+document.getElementById("calm").onclick = () => {
+    meter -= 5;
+    if (meter < 0) meter = 0;
+    meterSpeed += 0.02;
+    rounds++;
+    updateScore();
+    updateQuote();
+    document.getElementById("meter").style.width = meter + "%";
+    updateJanEmoji(meter);
+};
+
+document.getElementById("restart").onclick = () => {
+    document.getElementById("gameOver").style.display = "none";
+    startGame();
+};
+
+// -----------------------------
+//  START
+// -----------------------------
+
+startGame();
 </script>
 
+</body>
+</html>
