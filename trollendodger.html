@@ -211,7 +211,7 @@ const janTopics = {
         "AI is een complot van techbedrijven."
     ]
 };
-
+   
 // -----------------------------
 //  STATE
 // -----------------------------
@@ -243,7 +243,8 @@ let maxSpawnDelay = 1100;
 let nextSpawnTime = 0;
 
 let regenMode = false;
-let regenEndTime = 0;
+let regenIntroEndTime = 0;
+let regenRainEndTime = 0;
 
 // -----------------------------
 //  HELPERS
@@ -370,23 +371,25 @@ function updatePowerdowns(delta) {
 //  TROLLENREGEN ACTIVATION
 // -----------------------------
 function activateRegen() {
+    const now = performance.now();
     regenMode = true;
-    regenEndTime = performance.now() + 30000;
+    regenIntroEndTime = now + 5000;      // 5s "TROLLENREGEN!!!"
+    regenRainEndTime = regenIntroEndTime + 30000; // daarna 30s regen
 
     regenOverlay.style.display = "flex";
     regenTimerEl.textContent = 30;
-
-    running = false;
-
-    setTimeout(() => {
-        running = true;
-    }, 5000);
 }
 
 function updateRegenTimer(t) {
     if (!regenMode) return;
 
-    const remaining = Math.max(0, Math.ceil((regenEndTime - t) / 1000));
+    if (t < regenIntroEndTime) {
+        // Intro: alleen "TROLLENREGEN!!! 30" in beeld, geen countdown
+        regenTimerEl.textContent = 30;
+        return;
+    }
+
+    const remaining = Math.max(0, Math.ceil((regenRainEndTime - t) / 1000));
     regenTimerEl.textContent = remaining;
 
     if (remaining <= 0) {
@@ -442,7 +445,10 @@ function updatePlayer() {
 //  GAME LOOP
 // -----------------------------
 function loop(t) {
-    if (!running) return;
+    if (!running) {
+        requestAnimationFrame(loop);
+        return;
+    }
 
     const delta = t - lastTime;
     lastTime = t;
@@ -450,7 +456,9 @@ function loop(t) {
     updateRegenTimer(t);
 
     if (regenMode) {
-        if (Math.random() < 0.35) spawnBullet(true);
+        if (t >= regenIntroEndTime) {
+            if (Math.random() < 0.35) spawnBullet(true);
+        }
     } else {
         if (t > nextSpawnTime && bullets.length < 4) {
             spawnBullet();
