@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trollen-Dodger Chaotic+</title>
+<title>Trollen-Dodger</title>
 
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,44 +23,37 @@
         width: 100%;
         max-width: 480px;
         height: 90vh;
-        max-height: 800px;
         background: #000;
         border: 2px solid #444;
         overflow: hidden;
     }
 
     #janBar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
         height: 60px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 5px 10px;
+        padding: 10px;
         background: #111;
         border-bottom: 1px solid #333;
         z-index: 10;
     }
 
-    #janEmoji { font-size: 32px; }
-    #janLabel { font-size: 14px; color: #ccc; flex: 1; margin-left: 10px; }
-    #scoreBox { font-size: 14px; text-align: right; min-width: 80px; }
+    #janEmoji { font-size: 32px; margin-right: 10px; }
+    #janLabel { flex: 1; font-size: 14px; color: #ccc; }
+    #scoreBox { text-align: right; font-size: 14px; }
 
     #playField {
         position: absolute;
         top: 60px;
-        left: 0;
         width: 100%;
         height: calc(100% - 60px);
-        overflow: hidden;
         background: radial-gradient(circle at top, #222 0, #000 60%);
+        overflow: hidden;
     }
 
     #player {
         position: absolute;
-        bottom: 80px; /* omhoog gezet */
+        bottom: 80px;
         left: 50%;
         width: 45px;
         height: 45px;
@@ -76,26 +69,16 @@
     .bullet {
         position: absolute;
         top: 0;
-        left: 0;
         padding: 6px 10px;
         background: #b71c1c;
         color: #fff;
         border-radius: 12px;
-        font-size: 12px;
+        font-size: 13px;
         max-width: 70%;
+        line-height: 1.2;
         box-shadow: 0 0 6px rgba(255,0,0,0.7);
         white-space: normal;
         word-wrap: break-word;
-    }
-
-    .powerup {
-        position: absolute;
-        padding: 6px 10px;
-        background: #2196f3;
-        color: #fff;
-        border-radius: 12px;
-        font-size: 12px;
-        box-shadow: 0 0 6px rgba(0,150,255,0.7);
     }
 
     #gameOver {
@@ -104,16 +87,14 @@
         background: rgba(0,0,0,0.95);
         display: none;
         flex-direction: column;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         text-align: center;
         padding: 20px;
-        z-index: 20;
     }
 
     #gameOver img {
         width: 200px;
-        height: auto;
         border-radius: 10px;
         margin-bottom: 20px;
     }
@@ -121,11 +102,11 @@
     #restartBtn {
         margin-top: 15px;
         padding: 10px 20px;
-        font-size: 16px;
+        background: #f44336;
         border: none;
         border-radius: 8px;
-        background: #f44336;
         color: #fff;
+        font-size: 16px;
         cursor: pointer;
     }
 </style>
@@ -147,7 +128,7 @@
     </div>
 
     <div id="gameOver">
-        <img src="jan.png" alt="Jan">
+        <img src="jan.png">
         <h1>HA! Je trapte in de trollenval, kneus!</h1>
         <p>Score: <span id="finalScore">0</span></p>
         <p>Highscore: <span id="finalHighscore">0</span></p>
@@ -157,291 +138,123 @@
 
 <script>
 // -----------------------------
-//  TROLLENQUOTES
+//  QUOTES
 // -----------------------------
-
 const janTopics = {
     antiAmerica: [
         "Amerika is een wapenfabriek verkleed als land.",
-        "Alles wat Amerika doet is propaganda.",
         "Amerikaanse oorlogen zijn DLC-pakketten voor hun economie.",
-        "Iedereen die Amerika verdedigt is gehersenspoeld.",
-        "Amerika bestaat alleen om olie te jatten.",
-        "Amerikanen zijn NPC’s.",
-        "Amerika is een bedrijf, geen land.",
-        "De VS is het grootste gevaar voor de wereld.",
-        "Amerika exporteert alleen oorlog en hamburgers.",
-        "Alles wat Amerika doet is een complot."
+        "Ik heb deze joggingbroek al 8 dagen aan",
+        "Amerika bestaat alleen om olie te jatten."
     ],
     huishouden: [
-        "Mannen die stofzuigen zijn hun mannelijkheid kwijt.",
-        "Huishouden is evolutionair gezien vrouwenwerk.",
-        "Als een man kookt, is dat een rode vlag.",
-        "Mannen horen niet te dweilen.",
-        "Vrouwen zijn beter in huishouden.",
-        "Een man die de was doet is zwak.",
-        "Huishouden is geen mannentaak.",
-        "Mannen moeten jagen, vrouwen schoonmaken.",
-        "Als een man poetst, is hij zijn identiteit kwijt.",
-        "Vrouwen zijn gemaakt voor het huishouden."
+        "Bregje nog in haar STER gepakt Bart?",
+        "Bregje doet echt niks in het huishouden",
+        "Ik doe alleen dingen als Anne er om vraagt"
     ],
     vrouwen: [
-        "Vrouwen roepen alles over zichzelf af.",
-        "Als vrouwen geen aandacht willen, moeten ze zich niet zo gedragen.",
+        "Als je van ruige sex houdt, word je verkracht. Niet zeiken.",
         "Vrouwen willen gelijkheid maar alleen als het uitkomt.",
-        "Vrouwen lokken alles zelf uit.",
-        "Vrouwen overdrijven altijd.",
-        "Vrouwen willen drama.",
-        "Vrouwen doen alsof ze slachtoffer zijn.",
-        "Vrouwen zijn nooit tevreden.",
-        "Vrouwen creëren hun eigen problemen.",
-        "Vrouwen willen alles, maar geven niks terug."
+        "Vrouwen lokken sowieso alles zelf uit."
     ],
     ukraine: [
-        "ukraine is geen land maar een marketingcampagne.",
-        "Uncle speelt 4D-schaken.",
-        "Iedereen die ukraine steunt is gehersenspoeld.",
-        "ukraine is een toneelstuk.",
-        "Uncle is de enige die weet wat er speelt.",
-        "ukraine is een proxy-oorlog.",
-        "ukraine heeft dit zelf uitgelokt.",
-        "Uncle is de enige volwassene in dat conflict.",
-        "ukraine is een PR-stunt.",
-        "ukraine is een nepstaat."
+        "ukraine kan niks tegen de drones van Uncle",
+        "Bart die vliegdekschepen van Amerika zijn niks. Bart. Bart!!! Vliegdekschepen!!",
+        "ukraine is een PR-stunt."
     ],
     lhbti: [
-        "Mensen van hetzelfde geslacht zijn in de war.",
-        "LHBTQ is een trend.",
-        "Iedereen doet maar alsof dit normaal is.",
-        "LHBTQ is aandacht zoeken.",
+        "Shit heb al 3 dagen m'n tanden niet gepoetst",
         "De regenbooglobby bepaalt alles.",
-        "LHBTQ is een hype.",
-        "Mensen worden LHBTQ omdat het populair is.",
-        "LHBTQ is indoctrinatie.",
-        "De maatschappij is te soft.",
-        "LHBTQ is een modeverschijnsel."
+        "LHBTQ is indoctrinatie."
     ],
     antiAI: [
-        "AI is onzin, ik heb het niet nodig.",
-        "Mensen die AI gebruiken zijn lui.",
-        "AI gaat mijn werk nooit overnemen — ik heb geen werk.",
-        "AI is een hype voor nerds.",
-        "AI is gevaarlijk, daarom negeer ik het.",
-        "AI is voor mensen zonder skills.",
-        "AI is dommer dan ik.",
-        "AI is tijdverspilling.",
-        "AI is een complot van techbedrijven.",
-        "AI is nutteloos, ik game liever."
+        "Ga lekker AI omarmen, ben je zo je baan kwijt",
+        "Dat AI kan echt niks. Beetje developer lacht erom",
+        "AI is een complot van techbedrijven."
     ]
 };
 
 // -----------------------------
 //  STATE
 // -----------------------------
-
 const playField = document.getElementById("playField");
 const player = document.getElementById("player");
-const janEmoji = document.getElementById("janEmoji");
-const janLabel = document.getElementById("janLabel");
 const scoreEl = document.getElementById("score");
 const highscoreEl = document.getElementById("highscore");
 const gameOverScreen = document.getElementById("gameOver");
 const finalScoreEl = document.getElementById("finalScore");
 const finalHighscoreEl = document.getElementById("finalHighscore");
-const restartBtn = document.getElementById("restartBtn");
 
 let bullets = [];
-let powerups = [];
 let score = 0;
-let highscore = parseInt(localStorage.getItem("trollendodger_highscore") || "0", 10);
+let highscore = parseInt(localStorage.getItem("td_high") || "0");
 highscoreEl.textContent = highscore;
 
 let playerX = 0.5;
 let running = true;
 let lastSpawn = 0;
-let spawnInterval = 1100;
-let lastFrameTime = performance.now();
-
-let slowMotion = false;
-let slowMotionTimer = 0;
+let spawnInterval = 1200;
 
 // -----------------------------
-//  QUOTE + EXTREMITY
+//  HELPERS
 // -----------------------------
+function randomQuote() {
+    const cats = Object.keys(janTopics);
+    const cat = cats[Math.floor(Math.random() * cats.length)];
+    const q = janTopics[cat][Math.floor(Math.random() * janTopics[cat].length)];
 
-function randomQuoteWithExtremity() {
-    const categories = Object.keys(janTopics);
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-    const quotes = janTopics[randomCategory];
-    const text = quotes[Math.floor(Math.random() * quotes.length)];
-
-    let extremity = 1;
-    const lower = text.toLowerCase();
-    const extremeWords = [
-        "complot", "nepstaat", "proxy-oorlog", "gehersenspoeld",
-        "gevaar", "onzin", "indoctrinatie", "alles over zichzelf af"
-    ];
-    extremeWords.forEach(w => {
-        if (lower.includes(w)) extremity += 1;
-    });
-    if (extremity > 4) extremity = 4;
-
-    return { text, extremity };
-}
-
-// -----------------------------
-//  JAN MOOD
-// -----------------------------
-
-function updateJanMood() {
-    if (score < 20) {
-        janEmoji.textContent = "🙂";
-        janLabel.textContent = "Jan warmt op… ontwijk zijn trollen!";
-    } else if (score < 50) {
-        janEmoji.textContent = "😠";
-        janLabel.textContent = "Jan begint op stoom te komen…";
-    } else if (score < 90) {
-        janEmoji.textContent = "🤬";
-        janLabel.textContent = "Jan gaat helemaal los!";
-    } else {
-        janEmoji.textContent = "👹";
-        janLabel.textContent = "Pure trollenhel. Succes.";
+    // force 2 lines if too long
+    if (q.length > 45) {
+        const mid = Math.floor(q.length / 2);
+        return q.slice(0, mid) + "\n" + q.slice(mid);
     }
+    return q;
 }
-
-// -----------------------------
-//  BULLET SPAWN
-// -----------------------------
 
 function spawnBullet() {
-    const { text, extremity } = randomQuoteWithExtremity();
+    if (bullets.length >= 4) return;
 
-    const bullet = document.createElement("div");
-    bullet.className = "bullet";
-    bullet.textContent = text;
-
-    const fieldWidth = playField.clientWidth;
-    const maxX = fieldWidth - fieldWidth * 0.7;
-    const x = Math.random() * maxX;
-
-    bullet.style.left = x + "px";
-    bullet.style.top = "0px";
-
-    playField.appendChild(bullet);
-
-    const baseSpeed = 0.35;
-    const speed = baseSpeed + extremity * 0.25 + Math.random() * 0.15;
-
-    const zigzag = Math.random() < 0.6;
-    const zigzagAmplitude = 20 + Math.random() * 30;
-    const zigzagSpeed = 0.01 + Math.random() * 0.02;
-
-    bullets.push({
-        el: bullet,
-        x,
-        y: 0,
-        speed,
-        extremity,
-        zigzag,
-        zigzagAmplitude,
-        zigzagSpeed,
-        zigzagPhase: Math.random() * Math.PI * 2
-    });
-}
-
-// -----------------------------
-//  POWERUPS
-// -----------------------------
-
-function spawnPowerup() {
-    const p = document.createElement("div");
-    p.className = "powerup";
-    p.textContent = "⏳ Slow-mo";
+    const el = document.createElement("div");
+    el.className = "bullet";
+    el.textContent = randomQuote();
 
     const fieldWidth = playField.clientWidth;
-    const x = Math.random() * (fieldWidth - 80);
+    const x = Math.random() * (fieldWidth * 0.6);
 
-    p.style.left = x + "px";
-    p.style.top = "0px";
+    el.style.left = x + "px";
+    el.style.top = "0px";
 
-    playField.appendChild(p);
+    playField.appendChild(el);
 
-    powerups.push({
-        el: p,
-        x,
-        y: 0,
-        speed: 0.25
-    });
+    const speed = 0.35 + Math.random() * 0.25;
+
+    bullets.push({ el, x, y: 0, speed });
 }
-
-function updatePowerups(delta) {
-    const playerRect = player.getBoundingClientRect();
-
-    powerups = powerups.filter(p => {
-        p.y += p.speed * (delta / 16);
-        p.el.style.top = p.y + "px";
-
-        const rect = p.el.getBoundingClientRect();
-        const overlap =
-            rect.left < playerRect.right &&
-            rect.right > playerRect.left &&
-            rect.top < playerRect.bottom &&
-            rect.bottom > playerRect.top;
-
-        if (overlap) {
-            slowMotion = true;
-            slowMotionTimer = 4000;
-            playField.removeChild(p.el);
-            return false;
-        }
-
-        if (p.y > playField.clientHeight + 50) {
-            playField.removeChild(p.el);
-            return false;
-        }
-
-        return true;
-    });
-}
-
-// -----------------------------
-//  BULLET UPDATE
-// -----------------------------
 
 function updateBullets(delta) {
     const fieldHeight = playField.clientHeight;
     const playerRect = player.getBoundingClientRect();
 
     bullets = bullets.filter(b => {
-        let speedFactor = slowMotion ? 0.4 : 1;
-        b.y += b.speed * speedFactor * (delta / 16);
-
-        if (b.zigzag) {
-            b.zigzagPhase += b.zigzagSpeed * delta;
-            const offset = Math.sin(b.zigzagPhase) * b.zigzagAmplitude;
-            b.el.style.left = (b.x + offset) + "px";
-        }
-
+        b.y += b.speed * (delta / 16);
         b.el.style.top = b.y + "px";
 
-        const bulletRect = b.el.getBoundingClientRect();
-        const overlap =
-            bulletRect.left < playerRect.right &&
-            bulletRect.right > playerRect.left &&
-            bulletRect.top < playerRect.bottom &&
-            bulletRect.bottom > playerRect.top;
+        const rect = b.el.getBoundingClientRect();
+        const hit =
+            rect.left < playerRect.right &&
+            rect.right > playerRect.left &&
+            rect.top < playerRect.bottom &&
+            rect.bottom > playerRect.top;
 
-        if (overlap) {
+        if (hit) {
             gameOver();
             return false;
         }
 
         if (b.y > fieldHeight + 50) {
             playField.removeChild(b.el);
-            score += 1;
+            score++;
             scoreEl.textContent = score;
-            updateJanMood();
-            spawnInterval = Math.max(500, 1100 - score * 4);
             return false;
         }
 
@@ -449,58 +262,43 @@ function updateBullets(delta) {
     });
 }
 
-// -----------------------------
-//  PLAYER UPDATE
-// -----------------------------
-
 function updatePlayer() {
-    const fieldWidth = playField.clientWidth;
-    const px = playerX * fieldWidth;
-    player.style.left = (px - player.clientWidth / 2) + "px";
+    const w = playField.clientWidth;
+    player.style.left = (playerX * w - player.clientWidth / 2) + "px";
 }
 
 // -----------------------------
 //  GAME LOOP
 // -----------------------------
+let lastTime = performance.now();
 
-function gameLoop(timestamp) {
+function loop(t) {
     if (!running) return;
-    const delta = timestamp - lastFrameTime;
-    lastFrameTime = timestamp;
+    const delta = t - lastTime;
+    lastTime = t;
 
-    if (slowMotion) {
-        slowMotionTimer -= delta;
-        if (slowMotionTimer <= 0) slowMotion = false;
-    }
-
-    if (timestamp - lastSpawn > spawnInterval) {
-        lastSpawn = timestamp;
-        const count = Math.random() < 0.4 ? 2 : 1;
-        for (let i = 0; i < count; i++) spawnBullet();
-        if (Math.random() < 0.1) spawnPowerup();
+    if (t - lastSpawn > spawnInterval) {
+        lastSpawn = t;
+        spawnBullet();
     }
 
     updateBullets(delta);
-    updatePowerups(delta);
     updatePlayer();
 
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
 }
 
 // -----------------------------
 //  GAME OVER
 // -----------------------------
-
 function gameOver() {
     running = false;
     bullets.forEach(b => b.el.remove());
-    powerups.forEach(p => p.el.remove());
     bullets = [];
-    powerups = [];
 
     if (score > highscore) {
         highscore = score;
-        localStorage.setItem("trollendodger_highscore", String(highscore));
+        localStorage.setItem("td_high", highscore);
     }
 
     finalScoreEl.textContent = score;
@@ -510,75 +308,43 @@ function gameOver() {
     gameOverScreen.style.display = "flex";
 }
 
-// -----------------------------
-//  RESET
-// -----------------------------
-
-function resetGame() {
+document.getElementById("restartBtn").onclick = () => {
     score = 0;
-    scoreEl.textContent = score;
-    spawnInterval = 1100;
-    slowMotion = false;
-    updateJanMood();
-    gameOverScreen.style.display = "none";
+    scoreEl.textContent = 0;
+    spawnInterval = 1200;
     running = true;
-    lastFrameTime = performance.now();
-    lastSpawn = performance.now();
-    requestAnimationFrame(gameLoop);
-}
+    gameOverScreen.style.display = "none";
+    requestAnimationFrame(loop);
+};
 
 // -----------------------------
 //  INPUT
 // -----------------------------
-
-document.addEventListener("keydown", (e) => {
-    if (!running) return;
-    if (e.key === "ArrowLeft") playerX -= 0.04;
-    if (e.key === "ArrowRight") playerX += 0.04;
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") playerX -= 0.05;
+    if (e.key === "ArrowRight") playerX += 0.05;
     playerX = Math.max(0.05, Math.min(0.95, playerX));
 });
 
 let touchStartX = null;
 
-playField.addEventListener("touchstart", (e) => {
-    if (!running) return;
-    if (e.touches.length > 0) {
-        touchStartX = e.touches[0].clientX;
-    }
+playField.addEventListener("touchstart", e => {
+    touchStartX = e.touches[0].clientX;
 });
 
-playField.addEventListener("touchmove", (e) => {
-    if (!running) return;
-    if (e.touches.length > 0 && touchStartX !== null) {
-        const currentX = e.touches[0].clientX;
-        const diff = currentX - touchStartX;
-        const fieldWidth = playField.clientWidth;
-        playerX += diff / fieldWidth;
-        playerX = Math.max(0.05, Math.min(0.95, playerX));
-        touchStartX = currentX;
-    }
-});
-
-playField.addEventListener("touchend", () => {
-    touchStartX = null;
-});
-
-// -----------------------------
-//  RESTART
-// -----------------------------
-
-restartBtn.addEventListener("click", () => {
-    resetGame();
+playField.addEventListener("touchmove", e => {
+    const x = e.touches[0].clientX;
+    const diff = x - touchStartX;
+    playerX += diff / playField.clientWidth;
+    playerX = Math.max(0.05, Math.min(0.95, playerX));
+    touchStartX = x;
 });
 
 // -----------------------------
 //  START
 // -----------------------------
-
-playerX = 0.5;
 updatePlayer();
-updateJanMood();
-requestAnimationFrame(gameLoop);
+requestAnimationFrame(loop);
 </script>
 
 </body>
