@@ -81,6 +81,37 @@
         word-wrap: break-word;
     }
 
+    .powerdown {
+        position: absolute;
+        top: 0;
+        padding: 6px 10px;
+        background: #888;
+        color: #fff;
+        border-radius: 12px;
+        font-size: 16px;
+        box-shadow: 0 0 6px rgba(200,200,200,0.7);
+    }
+
+    #regenOverlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 50;
+        text-align: center;
+        color: #fff;
+        font-size: 32px;
+    }
+
+    #regenTimer {
+        font-size: 48px;
+        margin-top: 20px;
+        color: #ff4444;
+    }
+
     #gameOver {
         position: absolute;
         inset: 0;
@@ -91,6 +122,7 @@
         align-items: center;
         text-align: center;
         padding: 20px;
+        z-index: 100;
     }
 
     #gameOver img {
@@ -114,6 +146,7 @@
 <body>
 
 <div id="gameContainer">
+
     <div id="janBar">
         <div id="janEmoji">🙂</div>
         <div id="janLabel">Jan warmt op… ontwijk zijn trollen!</div>
@@ -127,6 +160,11 @@
         <div id="player">🧍</div>
     </div>
 
+    <div id="regenOverlay">
+        <div>TROLLENREGEN!!!</div>
+        <div id="regenTimer">30</div>
+    </div>
+
     <div id="gameOver">
         <img src="jan.png" alt="Jan">
         <h1>HA! Je trapte in de trollenval, kneus!</h1>
@@ -134,6 +172,7 @@
         <p>Highscore: <span id="finalHighscore">0</span></p>
         <button id="restartBtn">Opnieuw</button>
     </div>
+
 </div>
 
 <script>
@@ -186,8 +225,11 @@ const gameOverScreen = document.getElementById("gameOver");
 const finalScoreEl = document.getElementById("finalScore");
 const finalHighscoreEl = document.getElementById("finalHighscore");
 const restartBtn = document.getElementById("restartBtn");
+const regenOverlay = document.getElementById("regenOverlay");
+const regenTimerEl = document.getElementById("regenTimer");
 
 let bullets = [];
+let powerdowns = [];
 let score = 0;
 let highscore = parseInt(localStorage.getItem("td_high") || "0", 10);
 highscoreEl.textContent = highscore;
@@ -199,6 +241,9 @@ let lastTime = performance.now();
 let minSpawnDelay = 700;
 let maxSpawnDelay = 1100;
 let nextSpawnTime = 0;
+
+let regenMode = false;
+let regenEndTime = 0;
 
 // -----------------------------
 //  HELPERS
@@ -231,8 +276,11 @@ function randomQuote() {
     return q;
 }
 
-function spawnBullet() {
-    if (bullets.length >= 4) return;
+// -----------------------------
+//  BULLET SPAWN
+// -----------------------------
+function spawnBullet(force = false) {
+    if (!force && !regenMode && bullets.length >= 4) return;
 
     const el = document.createElement("div");
     el.className = "bullet";
@@ -260,11 +308,96 @@ function spawnBullet() {
     el.style.top = "0px";
     playField.appendChild(el);
 
-    const speed = 0.55 + Math.random() * 0.35;
+    const baseSpeed = 0.55 + Math.random() * 0.35;
+    const bonus = score * 0.015;
+    const regenBoost = regenMode ? 0.4 : 0;
+    const speed = baseSpeed + bonus + regenBoost;
 
     bullets.push({ el, x, y: 0, speed });
 }
 
+// -----------------------------
+//  POWER-DOWN (wolkje)
+// -----------------------------
+function spawnPowerdown() {
+    if (regenMode) return;
+    if (Math.random() > 0.015) return;
+
+    const el = document.createElement("div");
+    el.className = "powerdown";
+    el.textContent = "☁️";
+
+    const fieldWidth = playField.clientWidth;
+    const x = Math.random() * (fieldWidth - 60);
+
+    el.style.left = x + "px";
+    el.style.top = "0px";
+    playField.appendChild(el);
+
+    powerdowns.push({ el, x, y: 0, speed: 0.4 });
+}
+
+function updatePowerdowns(delta) {
+    const playerRect = player.getBoundingClientRect();
+
+    powerdowns = powerdowns.filter(p => {
+        p.y += p.speed * (delta / 16);
+        p.el.style.top = p.y + "px";
+
+        const rect = p.el.getBoundingClientRect();
+        const hit =
+            rect.left < playerRect.right &&
+            rect.right > playerRect.left &&
+            rect.top < playerRect.bottom &&
+            rect.bottom > playerRect.top;
+
+        if (hit) {
+            activateRegen();
+            playField.removeChild(p.el);
+            return false;
+        }
+
+        if (p.y > playField.clientHeight + 50) {
+            playField.removeChild(p.el);
+            return false;
+        }
+
+        return true;
+    });
+}
+
+// -----------------------------
+//  TROLLENREGEN ACTIVATION
+// -----------------------------
+function activateRegen() {
+    regenMode = true;
+    regenEndTime = performance.now() + 30000;
+
+    regenOverlay.style.display = "flex";
+    regenTimerEl.textContent = 30;
+
+    running = false;
+
+    setTimeout(() => {
+        running = true;
+    }, 1000);
+}
+
+function updateRegenTimer(t) {
+    if (!regenMode) return;
+
+    const remaining = Math.max(0, Math.ceil((regenEndTime - t) / 1000));
+    regenTimerEl.textContent = remaining;
+
+    if (remaining <= 0) {
+        regenMode = false;
+        regenOverlay.style.display = "none";
+    }
+}
+
+// -----------------------------
+//  BULLET UPDATE
+// -----------------------------
 function updateBullets(delta) {
     const fieldHeight = playField.clientHeight;
     const playerRect = player.getBoundingClientRect();
@@ -297,6 +430,9 @@ function updateBullets(delta) {
     });
 }
 
+// -----------------------------
+//  PLAYER UPDATE
+// -----------------------------
 function updatePlayer() {
     const w = playField.clientWidth;
     player.style.left = (playerX * w - player.clientWidth / 2) + "px";
@@ -307,14 +443,23 @@ function updatePlayer() {
 // -----------------------------
 function loop(t) {
     if (!running) return;
+
     const delta = t - lastTime;
     lastTime = t;
 
-    if (t > nextSpawnTime && bullets.length < 4) {
-        spawnBullet();
-        nextSpawnTime = t + (minSpawnDelay + Math.random() * (maxSpawnDelay - minSpawnDelay));
+    updateRegenTimer(t);
+
+    if (regenMode) {
+        if (Math.random() < 0.35) spawnBullet(true);
+    } else {
+        if (t > nextSpawnTime && bullets.length < 4) {
+            spawnBullet();
+            nextSpawnTime = t + (minSpawnDelay + Math.random() * (maxSpawnDelay - minSpawnDelay));
+        }
     }
 
+    spawnPowerdown();
+    updatePowerdowns(delta);
     updateBullets(delta);
     updatePlayer();
 
@@ -326,8 +471,12 @@ function loop(t) {
 // -----------------------------
 function gameOver() {
     running = false;
+
     bullets.forEach(b => b.el.remove());
     bullets = [];
+
+    powerdowns.forEach(p => p.el.remove());
+    powerdowns = [];
 
     if (score > highscore) {
         highscore = score;
@@ -348,12 +497,22 @@ restartBtn.addEventListener("click", () => {
     score = 0;
     scoreEl.textContent = "0";
     updateJanMood();
+
     bullets.forEach(b => b.el.remove());
     bullets = [];
+
+    powerdowns.forEach(p => p.el.remove());
+    powerdowns = [];
+
+    regenMode = false;
+    regenOverlay.style.display = "none";
+
     running = true;
     gameOverScreen.style.display = "none";
+
     lastTime = performance.now();
     nextSpawnTime = lastTime + 800;
+
     requestAnimationFrame(loop);
 });
 
@@ -393,7 +552,7 @@ playField.addEventListener("touchend", () => {
 });
 
 // -----------------------------
-//  START
+//  START GAME
 // -----------------------------
 updatePlayer();
 updateJanMood();
